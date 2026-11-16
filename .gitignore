@@ -1,0 +1,15 @@
+# Never commit game data or builds
+*.nes
+*.gb
+*.gbc
+*.sfc
+*.smc
+*.bin
+*.gen
+*.ips
+*.bps
+*.sav
+*.state
+*.tgz
+builds/
+__pycache__/
