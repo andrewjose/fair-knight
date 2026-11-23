@@ -458,3 +458,12 @@ Note: the boot timing to stage 1 isn't the same every run (`boot()` uses ~1200 f
 - **StrategyWiki (NES).** Stage 1 lists four hidden items: King doll (jump off a tombstone after the first Green Monster), extra armor (jump on the right bank after crossing the water), a bad Yashichi (duck between the ponds while Flying Knights are near; −30 s), and a good Yashichi (a jump spot in part 2). No exact NES positions are given, so it can confirm counts and kinds but not coordinates.
 - **(Wrong guess, corrected in v0.4: hidden items are type `$11`.) Probable trigger object: type `$20`**, handler bank 4 `$BF0B`. It's invisible while waiting (`$0522 = 0`). It counts ticks of Arthur overlapping it (`$F5F9`) up to 15, then plays sound `$10`, moves up 16 px and becomes visible (sprite `$74`/`$84`). In random stage 1 play it sat in a slot most of the time with `$061D = 3`. Still to do: confirm that it's the hidden-item trigger, find where these objects are placed (the stage object lists), decode the per-stage list to get positions and kinds, and find the duck/jump conditions.
 - **Plan once mapped.** An extractor script makes the per-stage table (stage, X, kind, condition) for an include file. Found bits go in `$04C4-$04CF` (8 stages × up to 12 triggers fits; a signature byte clears them at power-on). Map icons would go in the stage-intro map routine (bank 1), and sparkles in the type-`$20` waiting branch (draw a sprite instead of `$0522 = 0`).
+
+
+## Editions: standard and Classic (build flag, 2026-11-19)
+
+`src/build.py CLEAN OUT [--save] [--classic]`. `--classic` defines `CLASSIC=1` for every source file. In `bank2.s`:
+- `spark` (FK id 9, hook at bank 4 `$BB8C`) keeps only the original invisible-item path. No sparkle, duck-star or red-star sprites are ever drawn.
+- The SECRETS row in the options tables (`opt_n`/`opt_val`/VN/VD) offers MAP (`$00`) and OFF (`$03`).
+
+Everything else is identical. Without the flag the output is byte-identical to the standard release (v0.5.3 MD5 `44bfafdd69286d6253712462d0378a91`; Classic MD5 `fce9db81dff36652e079501004b3a6b2`). Test: `tools/t_classic.py ROM`.

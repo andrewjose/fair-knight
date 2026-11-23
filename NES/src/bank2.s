@@ -39,7 +39,7 @@ wpick:  lda FK_SET
         lda #0
         sta $0607,x
         lda $05AF            ; always drop 24 px back toward the start of the stage (left),
-        sec                  ; whichever way Arthur faces (Andrew, v0.5.1)
+        sec                  ; whichever way Arthur faces (design decision, v0.5.1)
         sbc #24
         sta $05AF,x
         lda $0583
@@ -516,10 +516,19 @@ d_exit: .byte "PRESS START OR A TO RETURN  "
 ;           KNOCKBACK      MERCY        WEAPON DROP   LADDER         AIR CONTROL    ENDGAME AID    SECRETS        FAIR SPAWNS
 opt_reg:  .byte 0,             0,           0,            0,             0,             1,             0,             1
 opt_mask: .byte FKS_KNOCKBACK, FKS_MERCY,   FKS_WDROP,    FKS_LADDER,    FKS_AIR,       FKP_ENDGAME,   FKS_SECRETS,   FKP_FAIRSP
+; CLASSIC edition (build.py --classic): no in-stage sparkles. SECRETS offers MAP / OFF only;
+; MAP uses encoding $00 (so power-on RAM 0 = KNIGHT = MAP), $01 is never set, OFF stays $03.
+.if CLASSIC
+opt_n:    .byte 2,             2,           2,            2,             3,             2,             2,             2
+opt_val:  .byte $00,$80,0,     $00,$40,0,   $00,$20,0,    $00,$10,0,     $00,$04,$0C,   $00,$80,0,     $00,$03,0,     $00,$40,0
+.define VN v_off,v_on,v_off, v_long,v_norm,v_norm, v_on,v_off,v_off, v_on,v_off,v_off, v_full,v_asst,v_off, v_on,v_off,v_off, v_map,v_off,v_off, v_on,v_off,v_off
+.define VD d_kb0,d_kb1,d_kb1, d_me0,d_me1,d_me1, d_wd0,d_wd1,d_wd1, d_la0,d_la1,d_la1, d_ai1,d_ai0,d_ai2, d_en0,d_en1,d_en1, d_se0,d_se2,d_se2, d_fs0,d_fs1,d_fs1
+.else
 opt_n:    .byte 2,             2,           2,            2,             3,             2,             3,             2
 opt_val:  .byte $00,$80,0,     $00,$40,0,   $00,$20,0,    $00,$10,0,     $00,$04,$0C,   $00,$80,0,     $00,$01,$03,   $00,$40,0
 .define VN v_off,v_on,v_off, v_long,v_norm,v_norm, v_on,v_off,v_off, v_on,v_off,v_off, v_full,v_asst,v_off, v_on,v_off,v_off, v_spark,v_map,v_off, v_on,v_off,v_off
 .define VD d_kb0,d_kb1,d_kb1, d_me0,d_me1,d_me1, d_wd0,d_wd1,d_wd1, d_la0,d_la1,d_la1, d_ai1,d_ai0,d_ai2, d_en0,d_en1,d_en1, d_se1,d_se0,d_se2, d_fs0,d_fs1,d_fs1
+.endif
 opt_vnlo: .lobytes VN
 opt_vnhi: .hibytes VN
 opt_vdlo: .lobytes VD
@@ -809,7 +818,9 @@ sfound: jsr sigchk
 ; FK id 9 (bank 4 $BB8C, X = hidden item, every tick while it waits).
 ; Original: invisible (sprite $49, draw bit cleared). SPARKLES: a twinkling spark at the spot,
 ; the larger star where you must duck, red palette for the harmful time-down item.
-spark:  lda FK_SET
+spark:
+.if .not CLASSIC                 ; CLASSIC: no sparkles at all, hidden items stay invisible as in the original
+        lda FK_SET
         and #FKS_SECRETS
         cmp #FKS_SECRETS_SPARK   ; v0.5.2: 00 = SPARKLES (KNIGHT default), 01 = MAP, 03 = OFF
         bne @orig
@@ -837,6 +848,7 @@ spark:  lda FK_SET
         ora #$80
         sta $04F0,x
         rts
+.endif
 @orig:  lda #$49
         sta $0522,x
         jmp $F346

@@ -2,6 +2,31 @@
 
 Base ROM: Ghosts'n Goblins (USA).nes, MD5 80dcd911aaa221fd3de883d5128eb97c.
 
+## v0.5.3 Classic — 2026-11-19  (FairKnight-NES-v0.5.3-Classic.ips/.bps, patched ROM MD5 fce9db81dff36652e079501004b3a6b2)
+
+**Plain language**
+- A second edition of v0.5.3 with the same gameplay changes and the same options menu, but no sparkles in the stages. Hidden items are invisible, as in the original game.
+- SECRETS has two settings: MAP (the default in KNIGHT; the READY screen lists found and not-found items) and OFF.
+
+**For software engineers**
+- Both editions are built from one source with a compile-time switch, like a feature flag resolved at build time: `build.py CLEAN OUT --classic`.
+- With the flag, the sparkle drawing code is left out of the ROM entirely, and the SECRETS menu row gets two values instead of three.
+- The standard build without the flag is byte-identical to v0.5.3.
+
+**Deep technical**
+- `build.py` passes `-D CLASSIC=0/1` to every `ca65` invocation.
+- `bank2.s` changes under `.if CLASSIC`:
+  - `spark` (FK id 9) assembles to just the original `@orig` path (`LDA #$49 / STA $0522,X / JMP $F346`).
+  - The SECRETS option row: `opt_n` = 2, values `$00` (shown as MAP) and `$03` (OFF), names `v_map`/`v_off`, descriptions `d_se0`/`d_se2`.
+- **Encoding choice:** MAP uses `$00`, so power-on RAM 0 (= KNIGHT) gives MAP without init code. `$01` is never produced. The READY list shows for any value except `$03`, so `$00` and `$01` behave the same there. Presets are unchanged (KNIGHT `$00`, LEGEND `$D3` = OFF, ORIGINAL `$FF` = OFF).
+- Tests (`tools/t_classic.py`):
+  - At the three t_secrets spots (4B duck 1264, 4B 2160, 1B red 2000), 0 visible hidden-item object frames over 40 frames for KNIGHT, LEGEND, ORIGINAL and `$01`. The same detector on the standard build: 19.
+  - The READY list shows with MAP and is absent with OFF (screenshots).
+  - The SECRETS row cycles only `$00`/`$03` both ways.
+  - 0 changed frames on the menu over 60 consecutive frames.
+  - `t_orig.py`: 600 idle frames identical; the bot run has only the known frame-191 sampling artefact.
+  - `build.py` without `--classic` gives MD5 `44bfafdd…` = v0.5.3.
+
 ## v0.5.3 — 2026-11-16  (FairKnight-NES-v0.5.3.ips, patched ROM MD5 44bfafdd69286d6253712462d0378a91)
 
 **Plain language**

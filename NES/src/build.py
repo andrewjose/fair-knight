@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fair Knight (NES) builder: assembles src/*.s with ca65/ld65 and patches the clean ROM.
-usage: build.py CLEAN.nes OUT.nes [--save]"""
+usage: build.py CLEAN.nes OUT.nes [--save] [--classic]   (--classic: no in-stage sparkles, SECRETS = MAP/OFF)"""
 import sys, os, subprocess, hashlib, tempfile
 CLEAN_MD5='80dcd911aaa221fd3de883d5128eb97c'
 HERE=os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +33,7 @@ REGIONS=[
 SOURCES=['hit_hop.s','mercy.s','far.s','bank2.s','wpick_site.s','title_site.s','tcur_site.s','start_site.s','ladder_site.s','air_site.s','sec_site.s','secret_sites.s','ready_site.s','fairspawn.s','fs_sites.s']
 def off(bank,addr): return 16+bank*0x4000+(addr-(0xC000 if bank==7 else 0x8000))
 def main():
-    clean,out=sys.argv[1],sys.argv[2]; save='--save' in sys.argv
+    clean,out=sys.argv[1],sys.argv[2]; save='--save' in sys.argv; classic='--classic' in sys.argv
     rom=bytearray(open(clean,'rb').read())
     assert hashlib.md5(rom).hexdigest()==CLEAN_MD5,'not the clean USA ROM'
     tmp=tempfile.mkdtemp()
@@ -41,7 +41,7 @@ def main():
     open(f'{tmp}/fk.cfg','w').write('\n'.join(cfg))
     objs=[]
     for s in SOURCES:
-        o=f'{tmp}/{s}.o'; subprocess.check_call(['ca65','-I',HERE]+(['-D','SAVE_ENABLED=1'] if save else ['-D','SAVE_ENABLED=0'])+[os.path.join(HERE,s),'-o',o,'-l',f'{tmp}/{s}.lst']); objs.append(o)
+        o=f'{tmp}/{s}.o'; subprocess.check_call(['ca65','-I',HERE]+(['-D','SAVE_ENABLED=1'] if save else ['-D','SAVE_ENABLED=0'])+['-D',f'CLASSIC={1 if classic else 0}']+[os.path.join(HERE,s),'-o',o,'-l',f'{tmp}/{s}.lst']); objs.append(o)
     subprocess.check_call(['ld65','-C',f'{tmp}/fk.cfg','-o',f'{tmp}/unused.bin','-m',os.path.join(HERE,'fk.map')]+objs)
     for n,b,a,s,k,h in REGIONS:
         o=off(b,a); orig=bytes(rom[o:o+s])
